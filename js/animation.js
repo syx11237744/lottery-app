@@ -83,42 +83,47 @@ class AnimationController {
     
     // 新增世界/星系初始化方法
     initWorlds() {
-        // 创建世界对象 - 水平等间距，垂直有规律变化
+        // 创建五个星系，上三下二布局
         this.worlds = [];
-        const worldCount = lotteryData.worlds.length;
+        const worldCount = 5; // 固定为5个星系
         
-        // 减少边距，使星系可以更接近屏幕边缘
-        const horizontalPadding = this.canvas.width * 0.08;
-        const availableWidth = this.canvas.width - (horizontalPadding * 2);
+        // 设置画布中心点
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height * 0.7; // 群中心点
         
-        // 垂直位置基准线和变化幅度
-        const baseY = this.canvas.height * 0.6; // 基准高度
-        const yAmplitude = this.canvas.height * 0.15; // 垂直变化幅度
+        // 设置上下行的纵向位置
+        const topRowY = centerY - this.canvas.height * 0.15; // 上排星系的Y坐标
+        const bottomRowY = centerY + this.canvas.height * 0.15; // 下排星系的Y坐标
         
-        for (let i = 0; i < worldCount; i++) {
+        // 星系尺寸
+        const baseSizeRange = [200, 280]; // 基础尺寸范围
+        
+        // 创建布局位置 - 上三下二
+        const positions = [
+            // 上排三个
+            { x: centerX - this.canvas.width * 0.35, y: topRowY },
+            { x: centerX, y: topRowY - this.canvas.height * 0.05 },
+            { x: centerX + this.canvas.width * 0.35, y: topRowY },
+            // 下排两个
+            { x: centerX - this.canvas.width * 0.2, y: bottomRowY },
+            { x: centerX + this.canvas.width * 0.2, y: bottomRowY }
+        ];
+        
+        // 记录群中心点，用于鲸鱼飞行目标
+        this.worldsCenter = {
+            x: centerX,
+            y: centerY
+        };
+        
+        // 创建星系
+        for (let i = 0; i < Math.min(worldCount, lotteryData.worlds.length); i++) {
             const world = lotteryData.worlds[i];
-            const worldImg = this.images[`world_${i}`];
-            
-            // 保持大尺寸星系
-            const worldSize = 150 + (i * 25); // 使尺寸按顺序有变化
-            
-            // 计算水平位置 - 等距分布
-            let xPosition;
-            if (worldCount === 1) {
-                // 如果只有一个星系，居中显示
-                xPosition = this.canvas.width / 2;
-            } else {
-                // 否则等距分布，最大化间隔
-                xPosition = horizontalPadding + (availableWidth * i / (worldCount - 1));
-            }
-            
-            // 使用正弦函数计算垂直位置，创建波浪形分布
-            // 三个星系将形成高-低-高 或 低-高-低 的分布
-            const yOffset = Math.sin((i / (worldCount - 1)) * Math.PI) * yAmplitude;
+            const pos = positions[i];
+            const worldSize = baseSizeRange[0] + Math.abs(Math.random()) * (baseSizeRange[1] - baseSizeRange[0]);
             
             this.worlds.push({
-                x: xPosition,
-                y: baseY + yOffset, // 基准高度加上偏移
+                x: pos.x,
+                y: pos.y,
                 size: worldSize,
                 originalSize: worldSize,
                 color: world.color,
@@ -132,19 +137,19 @@ class AnimationController {
     initWhales() {
         // 创建鲸鱼对象
         this.whales = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 10; i++) {
             const whaleTypeIndex = Math.floor(Math.random() * lotteryData.whales.length);
             const whaleImg = this.images[`whale_${whaleTypeIndex}`];
             
             const aspectRatio = whaleImg ? whaleImg.width / whaleImg.height : 2;
             const whaleHeight = 50 + Math.random() * 30;
-            const whaleWidth = whaleHeight * aspectRatio;
+            const whaleWidth = whaleHeight * aspectRatio * 1.5;
             
             this.whales.push({
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * (this.canvas.height / 2),
-                speedX: (Math.random() - 0.5) * 3.5, // 增加速度
-                speedY: (Math.random() - 0.5) * 2,   // 增加速度
+                speedX: (Math.random() - 0.5) * 4.5, // 增加速度
+                speedY: (Math.random() - 0.5) * 3,   // 增加速度
                 width: whaleWidth,
                 height: whaleHeight,
                 type: whaleTypeIndex,
@@ -363,9 +368,6 @@ class AnimationController {
         });
     }
     
-    // // 开始抽奖动画
-    
-    // Update the startDrawing method to decouple the prize from the whale's destination
     // 开始抽奖动画
     startDrawing(prize) {
         this.animationState = 'drawing';
@@ -373,10 +375,6 @@ class AnimationController {
         
         // 存储奖品，与目的地无关
         this.prizeToReveal = prize;
-        
-        // 选择一个随机世界作为目的地（与奖品无关）
-        const randomWorldIndex = Math.floor(Math.random() * this.worlds.length);
-        this.selectedWorld = this.worlds[randomWorldIndex];
         
         // 选择一只随机鲸鱼
         if (this.whales.length === 0) {
@@ -389,19 +387,23 @@ class AnimationController {
         // 从常规数组中移除选中的鲸鱼
         this.whales.splice(whaleIndex, 1);
         
-        // 调整鲸鱼朝向选中的世界
-        if (this.selectedWhale.x > this.selectedWorld.x) {
+        // 设置飞行目标为星系群中心点
+        const targetX = this.worldsCenter.x;
+        const targetY = this.worldsCenter.y;
+        
+        // 调整鲸鱼朝向中心点
+        if (this.selectedWhale.x > targetX) {
             this.selectedWhale.rotation = Math.PI; // 左转
         } else {
             this.selectedWhale.rotation = 0; // 右转
         }
         
-        // 为曲线移动生成路径点
+        // 为曲线移动生成路径点 - 飞向中心点而不是特定星系
         this.pathPoints = this.generateCurvedPath(
             this.selectedWhale.x, 
             this.selectedWhale.y,
-            this.selectedWorld.x,
-            this.selectedWorld.y
+            targetX,  // 中心点X
+            targetY   // 中心点Y
         );
         this.pathIndex = 0;
         
@@ -410,19 +412,32 @@ class AnimationController {
             this.animationState = 'whaleMoving';
         }, 1000);
     }
+
     generateCurvedPath(startX, startY, endX, endY) {
         const points = [];
         const numPoints = 100;
         
-        // 增加随机性和曲线的幅度
-        const amplitude = Math.min(this.canvas.width, this.canvas.height) * 0.3; // 增大振幅
+        // 计算起点和终点之间的直线距离
+        const directDistance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
         
-        // 创建两个控制点而不是一个，形成三次贝塞尔曲线
-        const controlPoint1X = (startX + endX) / 2 + (Math.random() - 0.5) * amplitude;
-        const controlPoint1Y = startY - Math.random() * amplitude; // 控制点向上偏移
+        // 根据距离设置曲线幅度的缩放因子
+        // 短距离时接近0（更直），长距离时接近1（完全曲线）
+        const maxDistance = Math.min(this.canvas.width, this.canvas.height) * 0.7;
+        const curveFactor = Math.min(directDistance / maxDistance, 1);
         
-        const controlPoint2X = (startX + endX) / 2 + (Math.random() - 0.5) * amplitude;
-        const controlPoint2Y = endY - Math.random() * amplitude * 0.7; // 第二控制点也向上偏移
+        // 基于距离调整振幅
+        const baseAmplitude = Math.min(this.canvas.width, this.canvas.height) * 0.3;
+        const adjustedAmplitude = baseAmplitude * curveFactor;
+        
+        // 创建两个控制点，振幅受距离影响
+        const controlPoint1X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
+        const controlPoint1Y = startY - Math.random() * adjustedAmplitude; 
+        
+        const controlPoint2X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
+        const controlPoint2Y = endY - Math.random() * adjustedAmplitude * 0.7;
+        
+        // 波动幅度也受距离影响
+        const waveStrength = curveFactor;
         
         // 生成三次贝塞尔曲线
         for (let i = 0; i <= numPoints; i++) {
@@ -439,14 +454,14 @@ class AnimationController {
                       3 * (1-t) * Math.pow(t, 2) * controlPoint2Y + 
                       Math.pow(t, 3) * endY;
             
-            // 添加小波动使路径更自然
-            const waveAmplitude = 5 + Math.random() * 5;
+            // 小波动也根据距离调整
+            const waveAmplitude = (5 + Math.random() * 5) * waveStrength;
             const waveFrequency = 0.1 + Math.random() * 0.1;
             const wave = Math.sin(t * Math.PI * 10 * waveFrequency) * waveAmplitude;
             
             points.push({
-                x: x + wave,
-                y: y + wave * 0.5
+                x: x + wave * waveStrength,
+                y: y + wave * 0.5 * waveStrength
             });
         }
         
@@ -475,22 +490,6 @@ class AnimationController {
         );
         this.ctx.stroke();
     }
-    generateCurvedPath(startX, startY, endX, endY) {
-        const points = [];
-        const numPoints = 100;
-        const controlPointX = (startX + endX) / 2 + (Math.random() - 0.5) * 300;
-        const controlPointY = (startY + endY) / 2 + (Math.random() - 0.5) * 200;
-        
-        for (let i = 0; i <= numPoints; i++) {
-            const t = i / numPoints;
-            // Quadratic Bezier curve formula
-            const x = (1-t)*(1-t)*startX + 2*(1-t)*t*controlPointX + t*t*endX;
-            const y = (1-t)*(1-t)*startY + 2*(1-t)*t*controlPointY + t*t*endY;
-            points.push({x, y});
-        }
-        
-        return points;
-    }
     
     // 动画：鲸鱼移动到选中的世界
     animateWhaleMoving() {
@@ -513,11 +512,20 @@ class AnimationController {
                 }
             }
             
-            // 计算到目标的剩余距离百分比
-            const progressAlongPath = this.pathIndex / (this.pathPoints.length - 1);
+            // 计算到中心点的距离
+            const centerX = this.worldsCenter.x;
+            const centerY = this.worldsCenter.y;
+            const distanceToCenter = Math.sqrt(
+                Math.pow(nextPoint.x - centerX, 2) + 
+                Math.pow(nextPoint.y - centerY, 2)
+            );
             
-            // 当鲸鱼完成路径的85%时，直接跳到光幕闪烁阶段
-            if (progressAlongPath > 0.85) {
+            // 定义接近中心点的阈值
+            const proximityThreshold = 50; // 距离中心点50像素以内就算到达
+            
+            // 当鲸鱼接近中心点或者完成路径的85%时，开始光幕
+            const progressAlongPath = this.pathIndex / (this.pathPoints.length - 1);
+            if (distanceToCenter < proximityThreshold || progressAlongPath > 0.85) {
                 // 根据奖品类型确定闪光颜色
                 const flashColor = (this.prizeToReveal.prizeType === 'first' || 
                                 this.prizeToReveal.prizeType === 'special') ? 
@@ -529,7 +537,7 @@ class AnimationController {
                 this.flashColor = flashColor;
             }
         } else {
-            // 到达目的地，进入光闪效果
+            // 到达终点，进入光闪效果
             this.animationState = 'lightFlash';
             this.flashStart = Date.now();
             
@@ -659,27 +667,122 @@ class AnimationController {
     }
     
     // 动画：光闪效果
+    // 动画：光闪效果 - 从星系中心向外扩散
+    // 动画：光闪效果 - 增强亮度和视觉冲击力
+    // 动画：光闪效果 - 增强亮度且更柔和的扩散效果
     animateLightFlash() {
-        const flashDuration = 2500; // Increased from 1500
+        const flashDuration = 2500;
         const elapsed = Date.now() - this.flashStart;
         const progress = Math.min(elapsed / flashDuration, 1);
         
-        // First increase, then fade out
-        let opacity;
-        if (progress < 0.6) { // Extended bright phase
-            opacity = progress * 1.6;
+        // 获取中心点坐标
+        const centerX = this.worldsCenter.x;
+        const centerY = this.worldsCenter.y;
+        
+        // 计算光效半径
+        const maxRadius = Math.sqrt(Math.pow(this.canvas.width, 2) + Math.pow(this.canvas.height, 2));
+        
+        // 光效半径增长曲线
+        let radius;
+        if (progress < 0.4) {
+            radius = maxRadius * (progress / 0.3);
+        } else if (progress < 0.7) {
+            radius = maxRadius * (1.0 + 0.05 * Math.sin(progress * 15)); // 轻微脉冲
         } else {
-            opacity = 4 - progress * 4; // Slower fade out
+            radius = maxRadius * (1 - (progress - 0.7) / 0.3);
+        }
+        radius = Math.max(0.1, radius);
+        
+        // 不透明度曲线
+        let opacity;
+        if (progress < 0.4) {
+            opacity = progress * 2.5;
+        } else if (progress < 0.7) {
+            opacity = 1.0 + 0.15 * Math.sin(progress * 20);
+        } else {
+            opacity = 1.0 - (progress - 0.7) / 0.3;
+        }
+        opacity = Math.min(Math.max(0, opacity), 1.0);
+        
+        this.ctx.save();
+        
+        // 背景模糊光晕层
+        this.ctx.fillStyle = this.flashColor === 'gold' ? 
+            'rgba(255, 215, 0, 0.15)' : 'rgba(128, 0, 255, 0.15)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        try {
+            // 主光效 - 使用多层渐变增强效果
+            const gradient = this.ctx.createRadialGradient(
+                centerX, centerY, 0,
+                centerX, centerY, radius
+            );
+            
+            // 设置更柔和的渐变过渡
+            const baseColor = this.flashColor || 'gold';
+            const brightColor = this.flashColor === 'gold' ? 
+                'rgba(255, 255, 200, 1.0)' : 'rgba(200, 100, 255, 1.0)';
+            
+            gradient.addColorStop(0, 'white');
+            gradient.addColorStop(0.1, brightColor);
+            gradient.addColorStop(0.4, baseColor);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            // 绘制主光效
+            this.ctx.fillStyle = gradient;
+            this.ctx.globalAlpha = opacity;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // 增强的中心光晕 - 更大更柔和
+            const glowSize = 200 + 250 * Math.sin(progress * Math.PI);
+            const glowGradient = this.ctx.createRadialGradient(
+                centerX, centerY, 0,
+                centerX, centerY, glowSize
+            );
+            
+            glowGradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            glowGradient.addColorStop(0.2, this.flashColor === 'gold' ? 
+                'rgba(255, 255, 180, 0.9)' : 'rgba(220, 180, 255, 0.9)');
+            glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            this.ctx.fillStyle = glowGradient;
+            this.ctx.globalAlpha = 0.9 * (1 - progress * 0.7);
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // 替换射线效果为柔和的光晕波纹
+            if (progress < 0.6) {
+                const waveCount = 3;
+                const maxWaveRadius = radius * 0.7 * progress;
+                
+                for (let i = 0; i < waveCount; i++) {
+                    const waveProgress = (progress + i/waveCount) % 1.0;
+                    const waveRadius = maxWaveRadius * waveProgress;
+                    const waveOpacity = 0.4 * (1 - waveProgress);
+                    
+                    const waveGradient = this.ctx.createRadialGradient(
+                        centerX, centerY, waveRadius * 0.8,
+                        centerX, centerY, waveRadius
+                    );
+                    
+                    waveGradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
+                    waveGradient.addColorStop(0.5, `rgba(255, 255, 255, ${waveOpacity * 0.5})`);
+                    waveGradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                    
+                    this.ctx.globalAlpha = waveOpacity;
+                    this.ctx.fillStyle = waveGradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+        } catch (e) {
+            console.error("渐变绘制错误:", e);
         }
         
-        // Draw flash effect with higher opacity
-        this.ctx.fillStyle = `${this.flashColor}`;
-        this.ctx.globalAlpha = Math.min(opacity * 0.9, 0.9); // Brighter (max 0.9)
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.globalAlpha = 1;
+        this.ctx.restore();
         
-        // When flash completes, move to reveal state
-        if (progress >= 1) {
+        // 当光效完成时，转到揭示状态
+        if (progress >= 0.999 || elapsed >= flashDuration) {
             this.animationState = 'revealing';
             this.revealProgress = 0;
             this.revealStart = Date.now();
@@ -863,10 +966,10 @@ class AnimationController {
     }
     
     // 重置到空闲状态
+    // 重置到空闲状态
     reset() {
         this.animationState = 'idle';
         this.selectedWhale = null;
-        this.selectedWorld = null;
         this.targetStar = null;
         this.stars = [];
         this.pathPoints = null;
@@ -880,6 +983,8 @@ class AnimationController {
         
         // 只重新初始化鲸鱼，不重新初始化世界
         this.initWhales();
+        
+        // 注意：不重置worldsCenter，保持中心点位置
     }
 }
 

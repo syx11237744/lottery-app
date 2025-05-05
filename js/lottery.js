@@ -64,7 +64,7 @@ class LotterySystem {
         // 最后一个设为特等奖，其余为一等奖
         this.firstPrizes = firstPrizesTemp.map((prize, i) => ({
             ...prize,
-            prizeType: i === firstPrizesTemp.length - 1 ? 'special' : 'first'
+            prizeType: i === firstPrizesTemp.length - 1 ? 'first' : 'first'
         }));
     }
     

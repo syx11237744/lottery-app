@@ -4,7 +4,9 @@ const lotteryData = {
     worlds: [
         { id: 'A', name: '银河系', color: '#3498db', image: 'images/galaxies/galaxy1.png' },
         { id: 'B', name: '仙女座星系', color: '#9b59b6', image: 'images/galaxies/galaxy2.png' },
-        { id: 'C', name: '三角座星系', color: '#e74c3c', image: 'images/galaxies/galaxy3.png' }
+        { id: 'C', name: '三角座星系', color: '#e74c3c', image: 'images/galaxies/galaxy3.png' },
+        { id: 'D', name: '三角座星系', color: '#e74c3c', image: 'images/galaxies/galaxy4.png' },
+        { id: 'F', name: '三角座星系', color: '#e74c3c', image: 'images/galaxies/galaxy5.png' }
     ],
     
     // 五种鲸鱼名称及图片
@@ -32,7 +34,7 @@ const lotteryData = {
 
 // 奖品配置
 const prizeConfig = {
-    firstPrize: 5,  // 特等奖+一等奖（共5个）
+    firstPrize: 5, 
     secondPrize: 15,
     thirdPrize: 30
 };
