@@ -527,9 +527,14 @@ class AnimationController {
             const progressAlongPath = this.pathIndex / (this.pathPoints.length - 1);
             if (distanceToCenter < proximityThreshold || progressAlongPath > 0.85) {
                 // 根据奖品类型确定闪光颜色
-                const flashColor = (this.prizeToReveal.prizeType === 'first' || 
-                                this.prizeToReveal.prizeType === 'special') ? 
-                                'gold' : 'purple';
+                let flashColor;
+                if (this.prizeToReveal.prizeType === 'first' || this.prizeToReveal.prizeType === 'special') {
+                    flashColor = 'gold';
+                } else if (this.prizeToReveal.prizeType === 'third') {
+                    flashColor = 'blue';  // 三等奖使用蓝色
+                } else {
+                    flashColor = 'purple'; // 二等奖仍然使用紫色
+                }
                 
                 // 直接跳转到光幕闪烁阶段
                 this.animationState = 'lightFlash';
@@ -544,8 +549,10 @@ class AnimationController {
             // 根据奖品类型确定闪光颜色
             if (this.prizeToReveal.prizeType === 'first' || this.prizeToReveal.prizeType === 'special') {
                 this.flashColor = 'gold';
+            } else if (this.prizeToReveal.prizeType === 'third') {
+                this.flashColor = 'blue';  // 三等奖使用蓝色
             } else {
-                this.flashColor = 'purple';
+                this.flashColor = 'purple'; // 二等奖仍然使用紫色
             }
         }
     }
@@ -667,9 +674,6 @@ class AnimationController {
     }
     
     // 动画：光闪效果
-    // 动画：光闪效果 - 从星系中心向外扩散
-    // 动画：光闪效果 - 增强亮度和视觉冲击力
-    // 动画：光闪效果 - 增强亮度且更柔和的扩散效果
     animateLightFlash() {
         const flashDuration = 2500;
         const elapsed = Date.now() - this.flashStart;
@@ -707,8 +711,13 @@ class AnimationController {
         this.ctx.save();
         
         // 背景模糊光晕层
-        this.ctx.fillStyle = this.flashColor === 'gold' ? 
-            'rgba(255, 215, 0, 0.15)' : 'rgba(128, 0, 255, 0.15)';
+        if (this.flashColor === 'gold') {
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.15)'; // 金色
+        } else if (this.flashColor === 'blue') {
+            this.ctx.fillStyle = 'rgba(30, 144, 255, 0.15)'; // 蓝色
+        } else {
+            this.ctx.fillStyle = 'rgba(128, 0, 255, 0.15)'; // 紫色
+        }
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         try {
@@ -720,8 +729,14 @@ class AnimationController {
             
             // 设置更柔和的渐变过渡
             const baseColor = this.flashColor || 'gold';
-            const brightColor = this.flashColor === 'gold' ? 
-                'rgba(255, 255, 200, 1.0)' : 'rgba(200, 100, 255, 1.0)';
+            let brightColor;
+            if (this.flashColor === 'gold') {
+                brightColor = 'rgba(255, 255, 200, 1.0)'; // 金色亮部
+            } else if (this.flashColor === 'blue') {
+                brightColor = 'rgba(100, 200, 255, 1.0)'; // 蓝色亮部
+            } else {
+                brightColor = 'rgba(200, 100, 255, 1.0)'; // 紫色亮部
+            }
             
             gradient.addColorStop(0, 'white');
             gradient.addColorStop(0.1, brightColor);
@@ -741,8 +756,13 @@ class AnimationController {
             );
             
             glowGradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-            glowGradient.addColorStop(0.2, this.flashColor === 'gold' ? 
-                'rgba(255, 255, 180, 0.9)' : 'rgba(220, 180, 255, 0.9)');
+            if (this.flashColor === 'gold') {
+                glowGradient.addColorStop(0.2, 'rgba(255, 255, 180, 0.9)'); // 金色光晕
+            } else if (this.flashColor === 'blue') {
+                glowGradient.addColorStop(0.2, 'rgba(180, 220, 255, 0.9)'); // 蓝色光晕
+            } else {
+                glowGradient.addColorStop(0.2, 'rgba(220, 180, 255, 0.9)'); // 紫色光晕
+            }
             glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             
             this.ctx.fillStyle = glowGradient;
@@ -806,7 +826,13 @@ class AnimationController {
         );
         
         // 设置文本样式
-        this.ctx.fillStyle = this.flashColor === 'gold' ? 'gold' : 'mediumpurple';
+        if (this.flashColor === 'gold') {
+            this.ctx.fillStyle = 'gold';  // 一等奖/特等奖金色
+        } else if (this.flashColor === 'blue') {
+            this.ctx.fillStyle = 'dodgerblue';  // 三等奖蓝色
+        } else {
+            this.ctx.fillStyle = 'mediumpurple';  // 二等奖紫色
+        }
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         

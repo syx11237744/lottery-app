@@ -28,8 +28,11 @@ class LotterySystem {
         // 创建所有可能的组合
         const allCombinations = [];
         
+        // 只使用前三个星系 (A, B, C)
+        const validWorlds = lotteryData.worlds.slice(0, 3);
+        
         // 遍历每个世界、鲸鱼和星体创建组合
-        lotteryData.worlds.forEach(world => {
+        validWorlds.forEach(world => {
             lotteryData.whales.forEach(whale => {
                 lotteryData.celestialBodies.forEach(celestialBody => {
                     allCombinations.push({
