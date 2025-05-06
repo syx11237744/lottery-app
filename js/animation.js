@@ -13,8 +13,11 @@ class AnimationController {
         this.selectedWorld = null;
         this.prizeToReveal = null;
         this.images = {}; // 存储加载的图像
+
+        this.whaleSound = null;
         
         this.setupCanvas();
+        this.loadWhaleSound();
         this.loadImages().then(() => {
             this.initObjects();
             this.animationState = 'idle';
@@ -57,6 +60,34 @@ class AnimationController {
         // 等待所有图像加载完成
         return Promise.all(promises);
     }
+    loadWhaleSound() {
+        try {
+            this.whaleSound = new Audio('sounds/whale.mp3'); // 替换为您的音频文件路径
+            this.whaleSound.load();
+            this.whaleSound.volume = 0.5; // 设置适当的音量
+        } catch (error) {
+            console.error('加载鲸鱼音效失败:', error);
+        }
+    }
+
+    playWhaleSound() {
+        if (this.whaleSound) {
+            // 重置并播放
+            this.whaleSound.pause();
+            this.whaleSound.currentTime = 0;
+            
+            // 播放音频
+            const playPromise = this.whaleSound.play();
+            
+            // 处理可能的播放错误
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log('音频播放出错:', error);
+                });
+            }
+        }
+    }
+    
     
     // 加载单个图像的辅助方法
     loadImage(key, src) {
@@ -96,13 +127,13 @@ class AnimationController {
         const bottomRowY = centerY + this.canvas.height * 0.15; // 下排星系的Y坐标
         
         // 星系尺寸
-        const baseSizeRange = [200, 280]; // 基础尺寸范围
+        const baseSizeRange = [240, 320]; // 基础尺寸范围
         
         // 创建布局位置 - 上三下二
         const positions = [
             // 上排三个
             { x: centerX - this.canvas.width * 0.35, y: topRowY },
-            { x: centerX, y: topRowY - this.canvas.height * 0.05 },
+            { x: centerX, y: topRowY + this.canvas.height * 0.05 },
             { x: centerX + this.canvas.width * 0.35, y: topRowY },
             // 下排两个
             { x: centerX - this.canvas.width * 0.2, y: bottomRowY },
@@ -142,7 +173,7 @@ class AnimationController {
             const whaleImg = this.images[`whale_${whaleTypeIndex}`];
             
             const aspectRatio = whaleImg ? whaleImg.width / whaleImg.height : 2;
-            const whaleHeight = 50 + Math.random() * 30;
+            const whaleHeight = 150 + Math.random() * 30;
             const whaleWidth = whaleHeight * aspectRatio * 1.5;
             
             this.whales.push({
@@ -154,9 +185,15 @@ class AnimationController {
                 height: whaleHeight,
                 type: whaleTypeIndex,
                 rotation: Math.random() > 0.5 ? 0 : Math.PI,
-                name: lotteryData.whales[whaleTypeIndex].name
+                name: lotteryData.whales[whaleTypeIndex].name,
+                // 直接在这里添加波动参数
+                waveAmplitude: 0.8 + Math.random() * 1.2,
+                waveFrequency: 0.002 + Math.random() * 0.001,
+                waveOffset: Math.random() * Math.PI * 2
             });
         }
+        // 设置标志为true，因为我们已经初始化了波动参数
+        this.whalesInitialized = true;
     }    
     
     // 开始动画循环
@@ -272,10 +309,28 @@ class AnimationController {
     
     // 更新鲸鱼位置
     updateWhales() {
+        // 如果是首次调用，为每条鲸鱼添加波动参数
+        if (!this.whalesInitialized) {
+            this.whales.forEach(whale => {
+                // 为每条鱼添加波动参数
+                whale.waveAmplitude = 0.8 + Math.random() * 1.2; // 波动幅度
+                whale.waveFrequency = 0.002 + Math.random() * 0.001; // 波动频率
+                whale.waveOffset = Math.random() * Math.PI * 2; // 随机相位偏移
+            });
+            this.whalesInitialized = true;
+        }
+
         this.whales.forEach(whale => {
-            // 更新位置
-            whale.x += whale.speedX * (whale.rotation === 0 ? 1 : -1); // 根据朝向调整方向
-            whale.y += whale.speedY;
+            // 更新水平位置 - 基本保持不变
+            whale.x += whale.speedX * (whale.rotation === 0 ? 1 : -1);
+            
+            // 计算垂直波动 - 添加温和的正弦运动
+            const baseSpeedY = whale.speedY; // 原始垂直速度
+            const time = Date.now() * whale.waveFrequency;
+            const waveY = Math.sin(time + whale.waveOffset) * whale.waveAmplitude;
+            
+            // 更新垂直位置 - 添加波动
+            whale.y += baseSpeedY + waveY;
             
             // 边界检查并环绕
             if (whale.x < -whale.width) whale.x = this.canvas.width + whale.width;
@@ -317,10 +372,10 @@ class AnimationController {
                     this.ctx.scale(-1, 1);
                 }
                 
-                // 为选中的鲸鱼添加发光效果
+                // 为选中的鲸鱼添加更强的发光效果
                 if (this.animationState === 'drawing') {
                     this.ctx.shadowColor = 'white';
-                    this.ctx.shadowBlur = 20;
+                    this.ctx.shadowBlur = 30; // 增加发光强度
                 }
                 
                 this.ctx.drawImage(
@@ -375,17 +430,77 @@ class AnimationController {
         
         // 存储奖品，与目的地无关
         this.prizeToReveal = prize;
+
+        // 播放鲸鱼叫声
+        const whaleSound = document.getElementById('whaleSound');
+        if (whaleSound) {
+            whaleSound.currentTime = 0;
+            whaleSound.play().catch(err => console.error("播放鲸鱼音效失败:", err));
+        }
         
         // 选择一只随机鲸鱼
         if (this.whales.length === 0) {
             this.initWhales();
         }
         
-        const whaleIndex = Math.floor(Math.random() * this.whales.length);
-        this.selectedWhale = this.whales[whaleIndex];
+        // 定义屏幕中心安全区域（避免边缘鲸鱼）
+        const safeMarginX = this.canvas.width * 0.2;  // 水平边缘安全距离（屏幕宽度的20%）
+        const safeMarginY = this.canvas.height * 0.2; // 垂直边缘安全距离（屏幕高度的20%）
         
-        // 从常规数组中移除选中的鲸鱼
-        this.whales.splice(whaleIndex, 1);
+        // 筛选位于安全区域内的鲸鱼
+        const eligibleWhales = this.whales.filter(whale => {
+            return (
+                whale.x > safeMarginX && 
+                whale.x < (this.canvas.width - safeMarginX) &&
+                whale.y > safeMarginY && 
+                whale.y < (this.canvas.height / 2)  // 鲸鱼主要在上半部分游动
+            );
+        });
+        
+        let selectedWhale;
+        
+        // 如果有符合条件的鲸鱼，从中随机选择一条
+        if (eligibleWhales.length > 0) {
+            const whaleIndex = Math.floor(Math.random() * eligibleWhales.length);
+            selectedWhale = eligibleWhales[whaleIndex];
+            
+            // 从原始数组中找到并移除这条鲸鱼
+            const originalIndex = this.whales.findIndex(whale => whale === selectedWhale);
+            if (originalIndex !== -1) {
+                this.whales.splice(originalIndex, 1);
+            }
+        } else {
+            // 如果没有符合条件的鲸鱼，则使用距离中心最近的鲸鱼
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 4; // 上半部分的中心
+            
+            // 计算每条鲸鱼到中心的距离
+            this.whales.forEach(whale => {
+                whale.distanceToCenter = Math.sqrt(
+                    Math.pow(whale.x - centerX, 2) + 
+                    Math.pow(whale.y - centerY, 2)
+                );
+            });
+            
+            // 按照到中心的距离排序
+            this.whales.sort((a, b) => a.distanceToCenter - b.distanceToCenter);
+            
+            // 选择最靠近中心的鲸鱼
+            selectedWhale = this.whales[0];
+            this.whales.splice(0, 1);
+        }
+        
+        this.selectedWhale = selectedWhale;
+        
+        // const aspectRatio = this.selectedWhale.width / this.selectedWhale.height;
+    
+        // // 设置固定尺寸 - 基于屏幕尺寸的相对值
+        // const fixedHeight = this.canvas.height * 0.18;  // 屏幕高度的12%
+        // const fixedWidth = fixedHeight * aspectRatio;   // 保持原始宽高比
+        
+        // 设置鲸鱼为固定尺寸
+        this.selectedWhale.height = this.selectedWhale.height * 1.8;
+        this.selectedWhale.width = this.selectedWhale.height * 1.8;
         
         // 设置飞行目标为星系群中心点
         const targetX = this.worldsCenter.x;
@@ -412,80 +527,112 @@ class AnimationController {
             this.animationState = 'whaleMoving';
         }, 1000);
     }
-
     generateCurvedPath(startX, startY, endX, endY) {
         const points = [];
-        const numPoints = 100;
+        const numPoints = 50; // 路径点数量
         
-        // 计算起点和终点之间的直线距离
-        const directDistance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-        
-        // 根据距离设置曲线幅度的缩放因子
-        // 短距离时接近0（更直），长距离时接近1（完全曲线）
-        const maxDistance = Math.min(this.canvas.width, this.canvas.height) * 0.7;
-        const curveFactor = Math.min(directDistance / maxDistance, 1);
-        
-        // 基于距离调整振幅
-        const baseAmplitude = Math.min(this.canvas.width, this.canvas.height) * 0.3;
-        const adjustedAmplitude = baseAmplitude * curveFactor;
-        
-        // 创建两个控制点，振幅受距离影响
-        const controlPoint1X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
-        const controlPoint1Y = startY - Math.random() * adjustedAmplitude; 
-        
-        const controlPoint2X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
-        const controlPoint2Y = endY - Math.random() * adjustedAmplitude * 0.7;
-        
-        // 波动幅度也受距离影响
-        const waveStrength = curveFactor;
-        
-        // 生成三次贝塞尔曲线
+        // 直线路径生成
         for (let i = 0; i <= numPoints; i++) {
             const t = i / numPoints;
             
-            // 三次贝塞尔曲线公式
-            const x = Math.pow(1-t, 3) * startX + 
-                      3 * Math.pow(1-t, 2) * t * controlPoint1X + 
-                      3 * (1-t) * Math.pow(t, 2) * controlPoint2X + 
-                      Math.pow(t, 3) * endX;
-                      
-            const y = Math.pow(1-t, 3) * startY + 
-                      3 * Math.pow(1-t, 2) * t * controlPoint1Y + 
-                      3 * (1-t) * Math.pow(t, 2) * controlPoint2Y + 
-                      Math.pow(t, 3) * endY;
+            // 线性插值 - 直线方程
+            const x = startX + (endX - startX) * t;
+            const y = startY + (endY - startY) * t;
             
-            // 小波动也根据距离调整
-            const waveAmplitude = (5 + Math.random() * 5) * waveStrength;
-            const waveFrequency = 0.1 + Math.random() * 0.1;
-            const wave = Math.sin(t * Math.PI * 10 * waveFrequency) * waveAmplitude;
-            
-            points.push({
-                x: x + wave * waveStrength,
-                y: y + wave * 0.5 * waveStrength
-            });
+            // 添加点到路径中，不添加波动效果
+            points.push({ x, y });
         }
         
         return points;
     }
+
+    // generateCurvedPath(startX, startY, endX, endY) {
+    //     const points = [];
+    //     let numPoints = 50;
+        
+    //     // 计算起点和终点之间的直线距离
+    //     const directDistance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+        
+    //     // 根据距离设置曲线幅度的缩放因子
+    //     // 短距离时接近0（更直），长距离时接近1（完全曲线）
+    //     const maxDistance = Math.min(this.canvas.width, this.canvas.height) * 0.7;
+    //     const curveFactor = Math.min(directDistance / maxDistance, 1);
+        
+    //     // 基于距离调整振幅
+    //     const baseAmplitude = Math.min(this.canvas.width, this.canvas.height) * 0.3;
+    //     const adjustedAmplitude = baseAmplitude * curveFactor;
+        
+    //     // 创建两个控制点，振幅受距离影响
+    //     const controlPoint1X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
+    //     const controlPoint1Y = startY - Math.random() * adjustedAmplitude; 
+        
+    //     const controlPoint2X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
+    //     const controlPoint2Y = endY - Math.random() * adjustedAmplitude * 0.7;
+        
+    //     // 波动幅度也受距离影响
+    //     const waveStrength = curveFactor;
+        
+    //     numPoints = numPoints * curveFactor;
+    //     // 生成三次贝塞尔曲线
+    //     for (let i = 0; i <= numPoints; i++) {
+    //         const t = i / numPoints;
+            
+    //         // 三次贝塞尔曲线公式
+    //         const x = Math.pow(1-t, 3) * startX + 
+    //                   3 * Math.pow(1-t, 2) * t * controlPoint1X + 
+    //                   3 * (1-t) * Math.pow(t, 2) * controlPoint2X + 
+    //                   Math.pow(t, 3) * endX;
+                      
+    //         const y = Math.pow(1-t, 3) * startY + 
+    //                   3 * Math.pow(1-t, 2) * t * controlPoint1Y + 
+    //                   3 * (1-t) * Math.pow(t, 2) * controlPoint2Y + 
+    //                   Math.pow(t, 3) * endY;
+            
+    //         // 小波动也根据距离调整
+    //         const waveAmplitude = (5 + Math.random() * 5) * waveStrength;
+    //         const waveFrequency = 0.1 + Math.random() * 0.1;
+    //         const wave = Math.sin(t * Math.PI * 10 * waveFrequency) * waveAmplitude;
+            
+    //         points.push({
+    //             x: x + wave * waveStrength,
+    //             y: y + wave * 0.5 * waveStrength
+    //         });
+    //     }
+        
+    //     return points;
+    // }
     // 动画：鲸鱼选择
     animateWhaleSelection() {
-        // 让选中的鲸鱼搏动
-        const pulseScale = 1 + 0.1 * Math.sin(Date.now() / 100);
+        // 让选中的鲸鱼搏动幅度更大
+        const pulseScale = 1 + 0.2 * Math.sin(Date.now() / 100); // 增加脉动幅度到0.2
         const originalWidth = this.selectedWhale.width / pulseScale;
         const originalHeight = this.selectedWhale.height / pulseScale;
         
         this.selectedWhale.width = originalWidth * pulseScale;
         this.selectedWhale.height = originalHeight * pulseScale;
         
-        // 在鲸鱼周围绘制高亮
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        this.ctx.lineWidth = 3;
+        // 在鲸鱼周围绘制更明显的高亮
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // 增加不透明度
+        this.ctx.lineWidth = 4; // 增加线宽
         this.ctx.beginPath();
         this.ctx.ellipse(
             this.selectedWhale.x, 
             this.selectedWhale.y, 
-            this.selectedWhale.width/2 + 10, 
-            this.selectedWhale.height/2 + 10, 
+            this.selectedWhale.width/2 + 15, // 增加高亮轮廓的间距
+            this.selectedWhale.height/2 + 15, 
+            0, 0, Math.PI * 2
+        );
+        this.ctx.stroke();
+        
+        // 添加第二层内部高亮，形成双层轮廓效果
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.ellipse(
+            this.selectedWhale.x, 
+            this.selectedWhale.y, 
+            this.selectedWhale.width/2 + 5,
+            this.selectedWhale.height/2 + 5, 
             0, 0, Math.PI * 2
         );
         this.ctx.stroke();
@@ -994,6 +1141,10 @@ class AnimationController {
     // 重置到空闲状态
     // 重置到空闲状态
     reset() {
+        if (this.whaleSound) {
+            this.whaleSound.pause();
+            this.whaleSound.currentTime = 0;
+        }
         this.animationState = 'idle';
         this.selectedWhale = null;
         this.targetStar = null;
@@ -1001,6 +1152,7 @@ class AnimationController {
         this.pathPoints = null;
         this.pathIndex = 0;
         this.worldEnterStartTime = null;
+        this.whalesInitialized = false; // 重置这个标志，确保新鲸鱼获得波动参数
         
         // 重置世界大小（但保持位置不变）
         this.worlds.forEach(world => {
