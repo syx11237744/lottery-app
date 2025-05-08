@@ -101,39 +101,39 @@ class LotterySystem {
                 this.currentDrawStage = 'first';
                 this.currentBatch.second = 0; // 重置批次
             } else {
-                return null; // 所有奖品都抽完了
+                // 如果是first阶段且抽完了，生成新的一等奖
+                if (this.currentDrawStage === 'first') {
+                    return this.generateAdditionalFirstPrize();
+                }
+                return null; // 其他情况返回null
             }
         }
         
         // 获取当前阶段的奖品
         const prizes = this.getCurrentStagePrizes();
         
-        if (prizes.length === 0) {
-            return null; // 没有奖品可抽了
+        if (prizes.length === 0 && this.currentDrawStage === 'first') {
+            // 如果是first阶段且抽完了，生成额外的一等奖
+            return this.generateAdditionalFirstPrize();
+        } else if (prizes.length === 0) {
+            return null; // 其他阶段没有奖品就返回null
         }
         
         // 为不同阶段使用不同的抽奖逻辑
         if (this.currentDrawStage === 'first') {
-            // 一等奖一个一个抽
-            this.currentPrize = prizes.shift();
-            this.drawnPrizes.push(this.currentPrize);
-            return this.currentPrize;
+            // 修改这里：使用generateAdditionalFirstPrize方法
+            // 直接生成随机奖品，而不是使用奖池中的第一个
+            return this.generateAdditionalFirstPrize();
         } else {
-            // 二等奖和三等奖分批抽取
-            const batchSize = this.currentDrawStage === 'second' ? 5 : 10; // 二等奖每批5个，三等奖每批10个
+            // 二等奖和三等奖逻辑保持不变
+            const batchSize = this.currentDrawStage === 'second' ? 5 : 10;
             const totalBatches = this.currentBatch.totalBatches[this.currentDrawStage];
             
-            // 确定这一批的结束索引
             let endIndex = Math.min(batchSize, prizes.length);
-            
-            // 获取这一批的奖品
             const batchPrizes = prizes.splice(0, endIndex);
             this.drawnPrizes.push(...batchPrizes);
             
-            // 增加当前批次计数
             this.currentBatch[this.currentDrawStage]++;
-            
-            // 取第一个作为主奖品用于动画
             this.currentPrize = batchPrizes[0];
             
             return {
@@ -146,9 +146,48 @@ class LotterySystem {
         }
     }
     
+    // 添加生成额外一等奖的方法
+    generateAdditionalFirstPrize() {
+        const extraDrawCount = this.firstPrizeDrawCount || 0; // Use 0 instead of this.firstPrizes.length
+        this.firstPrizeDrawCount = extraDrawCount + 1;
+        
+        // 随机选择一个世界/星系
+        const worldIndex = Math.floor(Math.random() * 3);
+        const worldId = lotteryData.worlds[worldIndex].id;
+        
+        // 随机选择一个鲸鱼
+        const whaleIndex = Math.floor(Math.random() * lotteryData.whales.length);
+        const whaleName = lotteryData.whales[whaleIndex].name;
+        
+        // 随机选择一个星体编号
+        const bodyIndex = Math.floor(Math.random() * lotteryData.celestialBodies.length);
+        const bodyName = lotteryData.celestialBodies[bodyIndex];
+        
+        // 创建新的随机奖品对象
+        const newPrize = { 
+            world: worldId,
+            whale: whaleName,
+            celestialBody: bodyName,
+            prizeType: 'first',
+            isExtra: true,  // 标记为额外生成
+            drawCount: this.firstPrizeDrawCount
+        };
+        
+        // 记录并返回
+        this.drawnPrizes.push(newPrize);
+        this.currentPrize = newPrize;
+        return newPrize;
+    }
+    
     // 获取剩余奖品总数
     getRemainingCount() {
-        return this.thirdPrizes.length + this.secondPrizes.length + this.firstPrizes.length;
+        // 二等奖和三等奖返回实际剩余数量
+        const secondAndThirdCount = this.thirdPrizes.length + this.secondPrizes.length;
+        
+        // 一等奖始终返回至少为1，表示可以继续抽取
+        const firstCount = Math.max(1, this.firstPrizes.length);
+        
+        return secondAndThirdCount + firstCount;
     }
     
     // 获取当前抽奖阶段

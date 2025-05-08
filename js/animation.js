@@ -545,62 +545,6 @@ class AnimationController {
         
         return points;
     }
-
-    // generateCurvedPath(startX, startY, endX, endY) {
-    //     const points = [];
-    //     let numPoints = 50;
-        
-    //     // 计算起点和终点之间的直线距离
-    //     const directDistance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-        
-    //     // 根据距离设置曲线幅度的缩放因子
-    //     // 短距离时接近0（更直），长距离时接近1（完全曲线）
-    //     const maxDistance = Math.min(this.canvas.width, this.canvas.height) * 0.7;
-    //     const curveFactor = Math.min(directDistance / maxDistance, 1);
-        
-    //     // 基于距离调整振幅
-    //     const baseAmplitude = Math.min(this.canvas.width, this.canvas.height) * 0.3;
-    //     const adjustedAmplitude = baseAmplitude * curveFactor;
-        
-    //     // 创建两个控制点，振幅受距离影响
-    //     const controlPoint1X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
-    //     const controlPoint1Y = startY - Math.random() * adjustedAmplitude; 
-        
-    //     const controlPoint2X = (startX + endX) / 2 + (Math.random() - 0.5) * adjustedAmplitude;
-    //     const controlPoint2Y = endY - Math.random() * adjustedAmplitude * 0.7;
-        
-    //     // 波动幅度也受距离影响
-    //     const waveStrength = curveFactor;
-        
-    //     numPoints = numPoints * curveFactor;
-    //     // 生成三次贝塞尔曲线
-    //     for (let i = 0; i <= numPoints; i++) {
-    //         const t = i / numPoints;
-            
-    //         // 三次贝塞尔曲线公式
-    //         const x = Math.pow(1-t, 3) * startX + 
-    //                   3 * Math.pow(1-t, 2) * t * controlPoint1X + 
-    //                   3 * (1-t) * Math.pow(t, 2) * controlPoint2X + 
-    //                   Math.pow(t, 3) * endX;
-                      
-    //         const y = Math.pow(1-t, 3) * startY + 
-    //                   3 * Math.pow(1-t, 2) * t * controlPoint1Y + 
-    //                   3 * (1-t) * Math.pow(t, 2) * controlPoint2Y + 
-    //                   Math.pow(t, 3) * endY;
-            
-    //         // 小波动也根据距离调整
-    //         const waveAmplitude = (5 + Math.random() * 5) * waveStrength;
-    //         const waveFrequency = 0.1 + Math.random() * 0.1;
-    //         const wave = Math.sin(t * Math.PI * 10 * waveFrequency) * waveAmplitude;
-            
-    //         points.push({
-    //             x: x + wave * waveStrength,
-    //             y: y + wave * 0.5 * waveStrength
-    //         });
-    //     }
-        
-    //     return points;
-    // }
     // 动画：鲸鱼选择
     animateWhaleSelection() {
         // 让选中的鲸鱼搏动幅度更大
@@ -993,7 +937,7 @@ class AnimationController {
                 // 绘制奖品类型与批次信息
                 this.ctx.font = '46px Arial';
                 this.ctx.fillText(`二等奖 (${currentBatch}/${totalBatches})`, this.canvas.width / 2, this.canvas.height * 0.15);
-
+    
                 // 显示获奖数量
                 this.ctx.font = '30px Arial';
                 this.ctx.fillText(
@@ -1001,7 +945,7 @@ class AnimationController {
                     this.canvas.width / 2,
                     this.canvas.height * 0.22
                 );
-
+    
                 // 使用2列布局，保持单行显示
                 const columnCount = 2;
                 const itemsPerColumn = Math.ceil(prizes.length / columnCount);
@@ -1109,7 +1053,14 @@ class AnimationController {
             // 绘制奖品类型
             this.ctx.font = '40px Arial';
             const prizeTypeText = this.prizeToReveal.prizeType === 'special' ? '特等奖' : '一等奖';
-            this.ctx.fillText(prizeTypeText, this.canvas.width / 2, this.canvas.height * 0.3);
+            
+            // 添加抽取次数显示
+            if (this.prizeToReveal.drawCount) {
+                this.ctx.fillText(`${prizeTypeText} (第${this.prizeToReveal.drawCount}次抽取)`, 
+                    this.canvas.width / 2, this.canvas.height * 0.3);
+            } else {
+                this.ctx.fillText(prizeTypeText, this.canvas.width / 2, this.canvas.height * 0.3);
+            }
             
             // 使用三行格式显示奖品代码
             // 第一行：世界/星系
@@ -1135,6 +1086,17 @@ class AnimationController {
                 this.canvas.width / 2,
                 this.canvas.height * 0.65
             );
+            
+            // 如果是额外生成的奖品，添加提示
+            // if (this.prizeToReveal.isExtra) {
+            //     this.ctx.font = '24px Arial';
+            //     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            //     this.ctx.fillText(
+            //         '(额外抽取)',
+            //         this.canvas.width / 2,
+            //         this.canvas.height * 0.75
+            //     );
+            // }
         }
     }
     
