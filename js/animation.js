@@ -222,7 +222,7 @@ class AnimationController {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         this.ctx.fillStyle = 'white';
-        this.ctx.font = '24px Arial';
+        this.ctx.font = '24px "Ma Shan Zheng", cursive';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('正在加载图片资源...', this.canvas.width / 2, this.canvas.height / 2);
@@ -873,15 +873,15 @@ class AnimationController {
             
             if (this.prizeToReveal.prizeType === 'second'){
                 // 绘制奖品类型与批次信息
-                this.ctx.font = '46px "Microsoft YaHei", "PingFang SC", sans-serif';
+                this.ctx.font = '60px "Ma Shan Zheng", cursive';
                 this.ctx.fillText(`二等奖 (${currentBatch}/${totalBatches})`, this.canvas.width / 2, this.canvas.height * 0.15);
     
                 // 显示获奖数量
-                this.ctx.font = '30px "Microsoft YaHei", "PingFang SC", sans-serif';
+                this.ctx.font = '40px "Ma Shan Zheng", cursive';
                 this.ctx.fillText(
                     `本批次 ${prizes.length} 个`,
                     this.canvas.width / 2,
-                    this.canvas.height * 0.22
+                    this.canvas.height * 0.25
                 );
     
                 // 使用2列布局，保持单行显示
@@ -895,9 +895,9 @@ class AnimationController {
                 ];
                 
                 // 绘制每列中奖号码
-                this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
+                this.ctx.font = '50px "Ma Shan Zheng", cursive';
                 const lineHeight = this.canvas.height * 0.15;
-                const startY = this.canvas.height * 0.3;
+                const startY = this.canvas.height * 0.35;
                 
                 for (let col = 0; col < columnCount; col++) {
                     const startX = columnPositions[col];
@@ -924,20 +924,20 @@ class AnimationController {
                 
                 // 添加继续提示（如果不是最后一批）
                 if (currentBatch < totalBatches) {
-                    this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
+                    this.ctx.font = '28px "Ma Shan Zheng", cursive';
                     this.ctx.fillText('点击继续查看下一批', this.canvas.width / 2, this.canvas.height * 0.85);
                 }
             } else {
                 // 三等奖显示
-                this.ctx.font = '42px "Microsoft YaHei", "PingFang SC", sans-serif';
+                this.ctx.font = '55px "Ma Shan Zheng", cursive';
                 this.ctx.fillText(`三等奖 (${currentBatch}/${totalBatches})`, this.canvas.width / 2, this.canvas.height * 0.15);
                 
                 // 显示获奖数量
-                this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
+                this.ctx.font = '34px "Ma Shan Zheng", cursive';
                 this.ctx.fillText(
                     `本批次 ${prizes.length} 个`,
                     this.canvas.width / 2,
-                    this.canvas.height * 0.2
+                    this.canvas.height * 0.24
                 );
                 
                 // 创建三列布局
@@ -952,9 +952,9 @@ class AnimationController {
                 ];
                 
                 // 单行显示奖项
-                this.ctx.font = '24px "Microsoft YaHei", "PingFang SC", sans-serif';
+                this.ctx.font = '45px "Ma Shan Zheng", cursive';
                 const lineHeight = this.canvas.height * 0.1;
-                const startY = this.canvas.height * 0.28;
+                const startY = this.canvas.height * 0.34;
                 
                 for (let col = 0; col < columnCount; col++) {
                     const startX = columnPositions[col];
@@ -981,7 +981,7 @@ class AnimationController {
                 
                 // 添加继续提示（如果不是最后一批）
                 if (currentBatch < totalBatches) {
-                    this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
+                    this.ctx.font = '28px "Ma Shan Zheng", cursive';
                     this.ctx.fillText('点击继续查看下一批', this.canvas.width / 2, this.canvas.height * 0.85);
                 }
             }
@@ -989,7 +989,7 @@ class AnimationController {
             // 单个奖项抽取（一等奖/特等奖）- 改为三行显示
             
             // 绘制奖品类型
-            this.ctx.font = '40px "Microsoft YaHei", "PingFang SC", sans-serif';
+            this.ctx.font = '60px "Ma Shan Zheng", cursive';
             const prizeTypeText = this.prizeToReveal.prizeType === 'special' ? '特等奖' : '一等奖';
             
             // 添加抽取次数显示
@@ -1002,7 +1002,7 @@ class AnimationController {
             
             // 使用三行格式显示奖品代码
             // 第一行：世界/星系
-            this.ctx.font = '54px "Microsoft YaHei", "PingFang SC", sans-serif';
+            this.ctx.font = '60px "Ma Shan Zheng", cursive';
             this.ctx.fillText(
                 this.prizeToReveal.world,
                 this.canvas.width / 2,
@@ -1010,7 +1010,7 @@ class AnimationController {
             );
             
             // 第二行：鲸鱼名称
-            this.ctx.font = '44px "Microsoft YaHei", "PingFang SC", sans-serif';
+            this.ctx.font = '60px "Ma Shan Zheng", cursive';
             this.ctx.fillText(
                 this.prizeToReveal.whale,
                 this.canvas.width / 2,
@@ -1018,7 +1018,7 @@ class AnimationController {
             );
             
             // 第三行：星体编号
-            this.ctx.font = '54px "Microsoft YaHei", "PingFang SC", sans-serif';
+            this.ctx.font = '60px "Ma Shan Zheng", cursive';
             this.ctx.fillText(
                 this.prizeToReveal.celestialBody,
                 this.canvas.width / 2,
