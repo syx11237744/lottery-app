@@ -3,11 +3,12 @@ import { lotteryData, prizeConfig } from './data.js';
 
 class LotterySystem {
     constructor() {
-        this.firstPrizes = [];    // 一等奖（包括特等奖）
-        this.secondPrizes = [];   // 二等奖
-        this.thirdPrizes = [];    // 三等奖
-        this.currentDrawStage = 'third'; // 当前抽奖阶段：'third', 'second', 'first'
+        this.firstPrizes = [];
+        this.secondPrizes = [];
+        this.thirdPrizes = [];
+        this.currentDrawStage = 'third';
         this.drawnPrizes = [];
+        this.drawnCodes = new Set();
         this.currentPrize = null;
         
         // 添加批次追踪
@@ -131,6 +132,12 @@ class LotterySystem {
             
             let endIndex = Math.min(batchSize, prizes.length);
             const batchPrizes = prizes.splice(0, endIndex);
+            
+            // Add codes to the drawnCodes set
+            batchPrizes.forEach(prize => {
+                this.drawnCodes.add(`${prize.world}-${prize.whale}-${prize.celestialBody}`);
+            });
+            
             this.drawnPrizes.push(...batchPrizes);
             
             this.currentBatch[this.currentDrawStage]++;
@@ -148,35 +155,72 @@ class LotterySystem {
     
     // 添加生成额外一等奖的方法
     generateAdditionalFirstPrize() {
-        const extraDrawCount = this.firstPrizeDrawCount || 0; // Use 0 instead of this.firstPrizes.length
+        const extraDrawCount = this.firstPrizeDrawCount || 0;
         this.firstPrizeDrawCount = extraDrawCount + 1;
         
-        // 随机选择一个世界/星系
-        const worldIndex = Math.floor(Math.random() * 3);
-        const worldId = lotteryData.worlds[worldIndex].id;
+        // Generate a unique prize that hasn't been drawn before
+        let uniquePrize = null;
+        let attempts = 0;
+        const maxAttempts = 100; // Prevent infinite loops
         
-        // 随机选择一个鲸鱼
-        const whaleIndex = Math.floor(Math.random() * lotteryData.whales.length);
-        const whaleName = lotteryData.whales[whaleIndex].name;
+        while (!uniquePrize && attempts < maxAttempts) {
+            attempts++;
+            
+            // Randomly select components
+            const worldIndex = Math.floor(Math.random() * 3);
+            const worldId = lotteryData.worlds[worldIndex].id;
+            
+            const whaleIndex = Math.floor(Math.random() * lotteryData.whales.length);
+            const whaleName = lotteryData.whales[whaleIndex].name;
+            
+            const bodyIndex = Math.floor(Math.random() * lotteryData.celestialBodies.length);
+            const bodyName = lotteryData.celestialBodies[bodyIndex];
+            
+            // Check if this combination has been drawn before
+            const prizeCode = `${worldId}-${whaleName}-${bodyName}`;
+            
+            if (!this.drawnCodes.has(prizeCode)) {
+                // Create new unique prize
+                uniquePrize = { 
+                    world: worldId,
+                    whale: whaleName,
+                    celestialBody: bodyName,
+                    prizeType: 'first',
+                    isExtra: true,
+                    drawCount: this.firstPrizeDrawCount
+                };
+                
+                // Add to drawn codes
+                this.drawnCodes.add(prizeCode);
+            }
+        }
         
-        // 随机选择一个星体编号
-        const bodyIndex = Math.floor(Math.random() * lotteryData.celestialBodies.length);
-        const bodyName = lotteryData.celestialBodies[bodyIndex];
+        // If we couldn't find a unique prize after max attempts, generate a random one with a special marker
+        if (!uniquePrize) {
+            const worldIndex = Math.floor(Math.random() * 3);
+            const worldId = lotteryData.worlds[worldIndex].id;
+            
+            const whaleIndex = Math.floor(Math.random() * lotteryData.whales.length);
+            const whaleName = lotteryData.whales[whaleIndex].name;
+            
+            const bodyIndex = Math.floor(Math.random() * lotteryData.celestialBodies.length);
+            const bodyName = lotteryData.celestialBodies[bodyIndex];
+            
+            uniquePrize = { 
+                world: worldId,
+                whale: whaleName,
+                celestialBody: bodyName,
+                prizeType: 'first',
+                isExtra: true,
+                drawCount: this.firstPrizeDrawCount,
+                isDuplicate: true // Mark as possible duplicate if we ran out of unique combinations
+            };
+        }
         
-        // 创建新的随机奖品对象
-        const newPrize = { 
-            world: worldId,
-            whale: whaleName,
-            celestialBody: bodyName,
-            prizeType: 'first',
-            isExtra: true,  // 标记为额外生成
-            drawCount: this.firstPrizeDrawCount
-        };
-        
-        // 记录并返回
-        this.drawnPrizes.push(newPrize);
-        this.currentPrize = newPrize;
-        return newPrize;
+        // Record and return
+        this.drawnPrizes.push(uniquePrize);
+        this.currentPrize = uniquePrize;
+        return uniquePrize;
     }
     
     // 获取剩余奖品总数

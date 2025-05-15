@@ -14,10 +14,8 @@ class AnimationController {
         this.prizeToReveal = null;
         this.images = {}; // 存储加载的图像
 
-        this.whaleSound = null;
         
         this.setupCanvas();
-        this.loadWhaleSound();
         this.loadImages().then(() => {
             this.initObjects();
             this.animationState = 'idle';
@@ -59,33 +57,6 @@ class AnimationController {
         
         // 等待所有图像加载完成
         return Promise.all(promises);
-    }
-    loadWhaleSound() {
-        try {
-            this.whaleSound = new Audio('sounds/whale.mp3'); // 替换为您的音频文件路径
-            this.whaleSound.load();
-            this.whaleSound.volume = 0.5; // 设置适当的音量
-        } catch (error) {
-            console.error('加载鲸鱼音效失败:', error);
-        }
-    }
-
-    playWhaleSound() {
-        if (this.whaleSound) {
-            // 重置并播放
-            this.whaleSound.pause();
-            this.whaleSound.currentTime = 0;
-            
-            // 播放音频
-            const playPromise = this.whaleSound.play();
-            
-            // 处理可能的播放错误
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log('音频播放出错:', error);
-                });
-            }
-        }
     }
     
     
@@ -168,7 +139,7 @@ class AnimationController {
     initWhales() {
         // 创建鲸鱼对象
         this.whales = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 8; i++) {
             const whaleTypeIndex = Math.floor(Math.random() * lotteryData.whales.length);
             const whaleImg = this.images[`whale_${whaleTypeIndex}`];
             
@@ -186,10 +157,6 @@ class AnimationController {
                 type: whaleTypeIndex,
                 rotation: Math.random() > 0.5 ? 0 : Math.PI,
                 name: lotteryData.whales[whaleTypeIndex].name,
-                // 直接在这里添加波动参数
-                waveAmplitude: 0.8 + Math.random() * 1.2,
-                waveFrequency: 0.002 + Math.random() * 0.001,
-                waveOffset: Math.random() * Math.PI * 2
             });
         }
         // 设置标志为true，因为我们已经初始化了波动参数
@@ -324,13 +291,8 @@ class AnimationController {
             // 更新水平位置 - 基本保持不变
             whale.x += whale.speedX * (whale.rotation === 0 ? 1 : -1);
             
-            // 计算垂直波动 - 添加温和的正弦运动
-            const baseSpeedY = whale.speedY; // 原始垂直速度
-            const time = Date.now() * whale.waveFrequency;
-            const waveY = Math.sin(time + whale.waveOffset) * whale.waveAmplitude;
-            
-            // 更新垂直位置 - 添加波动
-            whale.y += baseSpeedY + waveY;
+            // 直接使用垂直速度，无波动
+            whale.y += whale.speedY;
             
             // 边界检查并环绕
             if (whale.x < -whale.width) whale.x = this.canvas.width + whale.width;
@@ -403,12 +365,6 @@ class AnimationController {
                     world.size, 
                     world.size
                 );
-                
-                // 添加星系标识符
-                // this.ctx.fillStyle = 'white';
-                // this.ctx.font = '24px Arial';
-                // this.ctx.textAlign = 'center';
-                // this.ctx.fillText(world.id, world.x, world.y + world.size/2 + 30);
             }
         });
     }
@@ -430,13 +386,6 @@ class AnimationController {
         
         // 存储奖品，与目的地无关
         this.prizeToReveal = prize;
-
-        // 播放鲸鱼叫声
-        const whaleSound = document.getElementById('whaleSound');
-        if (whaleSound) {
-            whaleSound.currentTime = 0;
-            whaleSound.play().catch(err => console.error("播放鲸鱼音效失败:", err));
-        }
         
         // 选择一只随机鲸鱼
         if (this.whales.length === 0) {
@@ -492,15 +441,10 @@ class AnimationController {
         
         this.selectedWhale = selectedWhale;
         
-        // const aspectRatio = this.selectedWhale.width / this.selectedWhale.height;
-    
-        // // 设置固定尺寸 - 基于屏幕尺寸的相对值
-        // const fixedHeight = this.canvas.height * 0.18;  // 屏幕高度的12%
-        // const fixedWidth = fixedHeight * aspectRatio;   // 保持原始宽高比
         
         // 设置鲸鱼为固定尺寸
-        this.selectedWhale.height = this.selectedWhale.height * 1.8;
-        this.selectedWhale.width = this.selectedWhale.height * 1.8;
+        this.selectedWhale.height = this.selectedWhale.height * 2;
+        this.selectedWhale.width = this.selectedWhale.height * 1.3;
         
         // 设置飞行目标为星系群中心点
         const targetX = this.worldsCenter.x;
@@ -514,7 +458,7 @@ class AnimationController {
         }
         
         // 为曲线移动生成路径点 - 飞向中心点而不是特定星系
-        this.pathPoints = this.generateCurvedPath(
+        this.pathPoints = this.generateStraightPath(
             this.selectedWhale.x, 
             this.selectedWhale.y,
             targetX,  // 中心点X
@@ -527,7 +471,7 @@ class AnimationController {
             this.animationState = 'whaleMoving';
         }, 1000);
     }
-    generateCurvedPath(startX, startY, endX, endY) {
+    generateStraightPath(startX, startY, endX, endY) {
         const points = [];
         const numPoints = 50; // 路径点数量
         
@@ -917,13 +861,7 @@ class AnimationController {
         );
         
         // 设置文本样式
-        if (this.flashColor === 'gold') {
-            this.ctx.fillStyle = 'gold';  // 一等奖/特等奖金色
-        } else if (this.flashColor === 'blue') {
-            this.ctx.fillStyle = 'dodgerblue';  // 三等奖蓝色
-        } else {
-            this.ctx.fillStyle = 'mediumpurple';  // 二等奖紫色
-        }
+        this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         
@@ -935,11 +873,11 @@ class AnimationController {
             
             if (this.prizeToReveal.prizeType === 'second'){
                 // 绘制奖品类型与批次信息
-                this.ctx.font = '46px Arial';
+                this.ctx.font = '46px "Microsoft YaHei", "PingFang SC", sans-serif';
                 this.ctx.fillText(`二等奖 (${currentBatch}/${totalBatches})`, this.canvas.width / 2, this.canvas.height * 0.15);
     
                 // 显示获奖数量
-                this.ctx.font = '30px Arial';
+                this.ctx.font = '30px "Microsoft YaHei", "PingFang SC", sans-serif';
                 this.ctx.fillText(
                     `本批次 ${prizes.length} 个`,
                     this.canvas.width / 2,
@@ -957,7 +895,7 @@ class AnimationController {
                 ];
                 
                 // 绘制每列中奖号码
-                this.ctx.font = '28px Arial';
+                this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
                 const lineHeight = this.canvas.height * 0.15;
                 const startY = this.canvas.height * 0.3;
                 
@@ -986,16 +924,16 @@ class AnimationController {
                 
                 // 添加继续提示（如果不是最后一批）
                 if (currentBatch < totalBatches) {
-                    this.ctx.font = '28px Arial';
+                    this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
                     this.ctx.fillText('点击继续查看下一批', this.canvas.width / 2, this.canvas.height * 0.85);
                 }
             } else {
                 // 三等奖显示
-                this.ctx.font = '42px Arial';
+                this.ctx.font = '42px "Microsoft YaHei", "PingFang SC", sans-serif';
                 this.ctx.fillText(`三等奖 (${currentBatch}/${totalBatches})`, this.canvas.width / 2, this.canvas.height * 0.15);
                 
                 // 显示获奖数量
-                this.ctx.font = '28px Arial';
+                this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
                 this.ctx.fillText(
                     `本批次 ${prizes.length} 个`,
                     this.canvas.width / 2,
@@ -1014,7 +952,7 @@ class AnimationController {
                 ];
                 
                 // 单行显示奖项
-                this.ctx.font = '24px Arial';
+                this.ctx.font = '24px "Microsoft YaHei", "PingFang SC", sans-serif';
                 const lineHeight = this.canvas.height * 0.1;
                 const startY = this.canvas.height * 0.28;
                 
@@ -1043,7 +981,7 @@ class AnimationController {
                 
                 // 添加继续提示（如果不是最后一批）
                 if (currentBatch < totalBatches) {
-                    this.ctx.font = '28px Arial';
+                    this.ctx.font = '28px "Microsoft YaHei", "PingFang SC", sans-serif';
                     this.ctx.fillText('点击继续查看下一批', this.canvas.width / 2, this.canvas.height * 0.85);
                 }
             }
@@ -1051,7 +989,7 @@ class AnimationController {
             // 单个奖项抽取（一等奖/特等奖）- 改为三行显示
             
             // 绘制奖品类型
-            this.ctx.font = '40px Arial';
+            this.ctx.font = '40px "Microsoft YaHei", "PingFang SC", sans-serif';
             const prizeTypeText = this.prizeToReveal.prizeType === 'special' ? '特等奖' : '一等奖';
             
             // 添加抽取次数显示
@@ -1064,7 +1002,7 @@ class AnimationController {
             
             // 使用三行格式显示奖品代码
             // 第一行：世界/星系
-            this.ctx.font = '54px Arial';
+            this.ctx.font = '54px "Microsoft YaHei", "PingFang SC", sans-serif';
             this.ctx.fillText(
                 this.prizeToReveal.world,
                 this.canvas.width / 2,
@@ -1072,7 +1010,7 @@ class AnimationController {
             );
             
             // 第二行：鲸鱼名称
-            this.ctx.font = '44px Arial';
+            this.ctx.font = '44px "Microsoft YaHei", "PingFang SC", sans-serif';
             this.ctx.fillText(
                 this.prizeToReveal.whale,
                 this.canvas.width / 2,
@@ -1080,33 +1018,18 @@ class AnimationController {
             );
             
             // 第三行：星体编号
-            this.ctx.font = '54px Arial';
+            this.ctx.font = '54px "Microsoft YaHei", "PingFang SC", sans-serif';
             this.ctx.fillText(
                 this.prizeToReveal.celestialBody,
                 this.canvas.width / 2,
                 this.canvas.height * 0.65
             );
             
-            // 如果是额外生成的奖品，添加提示
-            // if (this.prizeToReveal.isExtra) {
-            //     this.ctx.font = '24px Arial';
-            //     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            //     this.ctx.fillText(
-            //         '(额外抽取)',
-            //         this.canvas.width / 2,
-            //         this.canvas.height * 0.75
-            //     );
-            // }
         }
     }
     
     // 重置到空闲状态
-    // 重置到空闲状态
     reset() {
-        if (this.whaleSound) {
-            this.whaleSound.pause();
-            this.whaleSound.currentTime = 0;
-        }
         this.animationState = 'idle';
         this.selectedWhale = null;
         this.targetStar = null;

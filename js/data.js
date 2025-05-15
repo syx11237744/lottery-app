@@ -12,10 +12,10 @@ const lotteryData = {
     // 五种鲸鱼名称及图片
     whales: [
         { name: '抹香鲸', image: 'images/whales/whale1.png' },
-        { name: '蓝鲸', image: 'images/whales/whale2.png' },
-        { name: '座头鲸', image: 'images/whales/whale3.png' },
-        { name: '虎鲸', image: 'images/whales/whale4.png' },
-        { name: '白鲸', image: 'images/whales/whale5.png' }
+        { name: '蓝鲸', image: 'images/whales/whale1.png' },
+        { name: '座头鲸', image: 'images/whales/whale1.png' },
+        { name: '虎鲸', image: 'images/whales/whale1.png' },
+        { name: '白鲸', image: 'images/whales/whale1.png' }
     ],
     
     // 背景图片

@@ -19,42 +19,6 @@
         </div>
     </div>
     
-    <!-- 添加音频元素 -->
-    <audio id="whaleSound" preload="auto" src="sounds/whale.mp3"></audio>
-    
-    <!-- 添加音频初始化脚本 -->
-    <script>
-    // 在页面加载完成后初始化音频
-    document.addEventListener('DOMContentLoaded', function() {
-        // 获取音频元素
-        const whaleSound = document.getElementById('whaleSound');
-        
-        // 用户首次点击页面时解锁音频播放
-        document.addEventListener('click', function initAudio() {
-            // 创建静音音频并尝试播放来解锁浏览器的音频播放限制
-            const silentSound = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbQAXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFwAAABMYXZmNTguNzYuMTAwAAAAAAAAAAAAAAD/4zLAAAAAAAAAAAAASW5mbwAAAA8AAAADAABtAABcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXAAAAExhdmY1OC43Ni4xMDAAAAAAAAAAAAAAMP/jYsAAAAAAAAAAAABJbmZvAAAADwAAAAMAAAGiAFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcAAAATGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+NKxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAaAAXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFwAAABMYXZmNTguNzYuMTAwAAAAAAAAAAAAAAD/42LEAAAAAAAAAAAIAAAAAExhdmM1OC4xMwAAAAAAAAAAAAAAACQDQAAAAAAAAAGqU1UqQlVVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/");
-            silentSound.play().then(() => {
-                console.log("音频已初始化");
-                // 尝试播放一下鲸鱼声音，但立即暂停（做测试用）
-                whaleSound.volume = 0;
-                whaleSound.play().then(() => {
-                    whaleSound.pause();
-                    whaleSound.currentTime = 0;
-                    whaleSound.volume = 0.5; // 恢复正常音量
-                    console.log("鲸鱼音效已初始化");
-                }).catch(e => {
-                    console.error("鲸鱼音效初始化失败", e);
-                });
-            }).catch(e => {
-                console.error("音频初始化失败", e);
-            });
-            
-            // 移除事件监听器
-            document.removeEventListener('click', initAudio);
-        });
-    });
-    </script>
-    
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
